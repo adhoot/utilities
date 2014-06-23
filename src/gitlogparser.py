@@ -13,7 +13,7 @@ class Glog:
         GIT_LOG_FORMAT = ['%H', '%an', '%ae', '%ad', '%s', '%b']
         GIT_LOG_FORMAT = '%x1f'.join(GIT_LOG_FORMAT) + '%x1e'
 
-        os.chdir('/Users/adhoot/code/apache-hadoop')
+        #os.chdir('/Users/adhoot/code/apache-hadoop')
         p = Popen('git log --format="%s" -n 10' % GIT_LOG_FORMAT, shell=True,
                   stdout=PIPE)
 
