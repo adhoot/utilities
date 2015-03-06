@@ -13,15 +13,15 @@ class Glog:
         GIT_LOG_FORMAT = ['%H', '%an', '%ae', '%ad', '%s', '%b']
         GIT_LOG_FORMAT = '%x1f'.join(GIT_LOG_FORMAT) + '%x1e'
 
-        #os.chdir('/Users/adhoot/code/apache-hadoop')
         p = Popen('git log --format="%s" -n 10' % GIT_LOG_FORMAT, shell=True,
                   stdout=PIPE)
 
         (log, _) = p.communicate()
         log = log.strip('\n\x1e').split("\x1e")
+
         log = [row.strip().split("\x1f") for row in log]
         log = [dict(zip(GIT_COMMIT_FIELDS, row)) for row in log]
-        # print(log)
+
         return log
 
     def gitdiff(self, commitId):
@@ -30,14 +30,15 @@ class Glog:
     def printcherrypicks(self):
         logs = self.parselastcommit()
         for log in logs:
-            # print ('body=>' + log['body'])
             portedCommit = log['id']
-            originalId = ''
             m = re.search('cherry picked from commit ([a-z0-9A-Z]+)', log[
-                'body'])
-            if m:
+                'body'] + log['subject'])
+            if m is not None:
+                m = re.search('This reverts commit ([a-z0-9A-Z]+)', log[
+                    'body'] + log['subject'])
+            if (m):
                 originalId = m.group(1)
-                print (originalId + ' was ported into ' + portedCommit)
+                print (originalId + ' being compared to current commit ' + portedCommit)
 
                 conflictorig_patch = '/tmp/conflictorig.patch'
                 originalDiffPatch = open(conflictorig_patch, 'w')
@@ -51,5 +52,5 @@ class Glog:
 
                 check_call(["diffmerge", conflictorig_patch, conflictported_patch])
             else:
-                print ('No cherry pick commit found')
+                print ('No revert or cherry pick commit found in ' + portedCommit)
 Glog().printcherrypicks()

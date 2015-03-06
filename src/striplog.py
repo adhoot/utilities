@@ -18,8 +18,8 @@ with open(sys.argv[1]) as log:
         line = lineitem.split(' ')
         if (len(line) > 2):
             try:
+                print ' '.join(line[4:]).strip()
                 conv = 1
-                print ' '.join(line[3:]).strip()
             except ValueError:
                 pass
         if not conv:
