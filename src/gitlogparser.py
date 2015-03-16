@@ -33,10 +33,10 @@ class Glog:
             portedCommit = log['id']
             m = re.search('cherry picked from commit ([a-z0-9A-Z]+)', log[
                 'body'] + log['subject'])
-            if m is not None:
+            if m is None:
                 m = re.search('This reverts commit ([a-z0-9A-Z]+)', log[
                     'body'] + log['subject'])
-            if (m):
+            if m:
                 originalId = m.group(1)
                 print (originalId + ' being compared to current commit ' + portedCommit)
 
