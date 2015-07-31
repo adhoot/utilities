@@ -21,8 +21,7 @@ export handle=`llamaclient register -callback 127.0.0.1:16000 -clientid 1df87d05
 llamaclient getnodes  -llama $llamahost:15000 -handle $handle > ./nodes.txt
 export nodes=`paste -d, -s ./nodes.txt`
 echo "### Starting 5 iterations of allocations on a $nodecount sized allocations"
-n = 0
-until [ $n -ge 5 ]; do 
+n=0; until [ $n -ge 5 ]; do 
 	llamaclient load  -llama $llamahost:15000 -callback localhost:20000 -clients 1 -rounds $rounds -holdtime 0 -sleeptime 0 -expandtime 0  -locations $nodes -cpus 1 -memory 128 -user adhoot
 	curl http://$llamahost:15001/jmx\?qry\=metrics:name\=llama.am.queue.*allocation-latency\*
 done
