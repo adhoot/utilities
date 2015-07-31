@@ -8,7 +8,7 @@ die () {
 echo $1 | grep -E -q '^[0-9]+$' || die "Numeric argument required, $1 provided"
 
 nodecount=$1
-rounds=1
+rounds=100
 export llamahost=127.0.0.1
 echo $nodecount nodes for the cluster used
 echo using llama host $llamahost
@@ -17,7 +17,7 @@ minillama minicluster -nodes $nodecount > minillama.log&
 n=0; until [ $n -ge 10 ]; do  curl http://$llamahost:15001/ && break; echo Iteration $n; n=$(($n+1)); sleep 2; done
 echo "## Llama ready .... starting perf test ###"
 
-export handle=`llamaclient register -callback 127.0.0.1:16000 -clientid 1df87d05786d42cb:83d93b6ebc4e9b4f -llama $llamahost:15000`
+export handle=`llamaclient register -callback $llamahost:16000 -clientid 1df87d05786d42cb:83d93b6ebc4e9b4f -llama $llamahost:15000`
 llamaclient getnodes  -llama $llamahost:15000 -handle $handle > ./nodes.txt
 export nodes=`paste -d, -s ./nodes.txt`
 echo "### Starting 5 iterations of allocations on a $nodecount sized allocations"
