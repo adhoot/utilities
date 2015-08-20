@@ -34,6 +34,8 @@ n=0; until [ $n -ge $iterations ]; do
     llamaclient load  -llama $llamahost:15000 -callback localhost:20000 -clients 1 -rounds $rounds -holdtime 0 -sleeptime 0 -expandtime 0  -locations $nodes -cpus 1 -memory 128 -user adhoot
 	curl http://$llamahost:15001/jmx\?qry\=metrics:name\=llama.am.queue.*allocation-latency\*
 	n=$((n+1))
+
+	read -p "Press a key to continue"
 done
 
 echo "End of test killing minillama"
