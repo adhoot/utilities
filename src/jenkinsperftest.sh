@@ -1,3 +1,4 @@
+#!/bin/bash
 die () {
     echo >&2 "$@"
     kill %%
@@ -23,16 +24,14 @@ fi
 
 echo version for build is  ${POM_VERSION}
 
-for CLIENTCOUNT in $CLIENTCOUNTS
-do 
- echo client ${CLIENTCOUNT}
-done
+rm -rf $WORKSPACE/logs
+mkdir -p $WORKSPACE/logs
 
-die
-
-# git fetch http://github.mtv.cloudera.com/adhoot/llama.git perftest
-# git cherry-pick -x e7f9240 
-# git cherry-pick -x fba349f
+: ${clienthost:=localhost}
+export llamahost=127.0.0.1
+echo $NODECOUNT nodes for the cluster
+echo using llama host $llamahost
+echo testing $ROUNDS rounds for $ITERATIONS iterations
 
 mvn clean package -Pdist -Dtar -Dmaven.javadoc.skip=true -DskipTests
 
@@ -50,16 +49,7 @@ echo ### Starting perf test
 pushd mini-llama/target/mini-llama-1.0.0-cdh5.5.0-SNAPSHOT/mini-llama-1.0.0-cdh5.5.0-SNAPSHOT/bin
 
 
-nodecount=$NODECOUNT
-: ${clienthost:=localhost}
-export llamahost=127.0.0.1
-echo $nodecount nodes for the cluster
-echo using llama host $llamahost
-echo testing $ROUNDS rounds for $ITERATIONS iterations
-
-mkdir logs
-
-minillama minicluster -nodes $nodecount& > logs/minillama.log
+minillama minicluster -nodes $NODECOUNT > $WORKSPACE/logs/minillama.log&
 n=0; until [ $n -ge 500 ]; do  curl http://$llamahost:15001/ && break; echo Iteration $n; n=$(($n+1)); sleep 2; done
 echo "## Llama ready .... starting perf test ###"
 
@@ -74,20 +64,20 @@ export nodes=`paste -d, -s ./nodes.txt`
 [[ -z $nodes ]] && die "Get nodes was not successful"
 echo Got llama nodes $nodes
 
-for CLIENTCOUNT in $CLIENTCOUNTS[@]
+for CLIENTCOUNT in $CLIENTCOUNTS
 do
-    echo "### Using $CLIENTCOUNT number of client threads
-    echo "### Starting $ITERATIONS iterations of allocations on a $nodecount sized allocations"
+    echo "### Using $CLIENTCOUNT number of client threads"
+    echo "### Starting $ITERATIONS iterations of allocations on a $NODECOUNT sized allocations"
     n=0; until [ $n -ge $ITERATIONS ]; do
         echo "### Test iteration " $n
-        testlog=logs/clients${CLIENTCOUNT}_nodes${NODECOUNT}_expand${EXPANDHOLDTIME}_rounds${ROUNDS}_iteration${n}.log 
+        testlog=$WORKSPACE/logs/clients${CLIENTCOUNT}_nodes${NODECOUNT}_expand${EXPANDHOLDTIME}_rounds${ROUNDS}_iteration${n}.log 
         llamaclient load  -llama $llamahost:15000 -callback $clienthost:20000 -clients $CLIENTCOUNT -rounds $ROUNDS -holdtime 0 -sleeptime 0 -expandtime $EXPANDHOLDTIME  -locations $nodes -cpus 1 -memory 128 -user adhoot > $testlog
-	curl http://$llamahost:15001/jmx\?qry\=metrics:name\=llama.am.queue.*allocation-latency\* >> testlog
+	curl http://$llamahost:15001/jmx\?qry\=metrics:name\=llama.am.queue.*allocation-latency\* >> $testlog
 	n=$((n+1))
 
     done
 done
-
+gzip $WORKSPACE/logs/*.log
 
 echo "End of test killing minillama"
 kill %%
