@@ -33,16 +33,19 @@ echo $NODECOUNT nodes for the cluster
 echo using llama host $llamahost
 echo testing $ROUNDS rounds for $ITERATIONS iterations
 
+#clean
 mvn clean package -Pdist -Dtar -Dmaven.javadoc.skip=true -DskipTests
 
 echo Using hadoop $HADOOPVERSION
-#rm -rf $HADOOPVERSION
+rm -rf $HADOOPVERSION
 
 curl -O http://repos.jenkins.cloudera.com/cdh5-nightly/cdh/5/$HADOOPVERSION.tar.gz
 tar -xzf $HADOOPVERSION.tar.gz
 curl -O http://github.mtv.cloudera.com/raw/adhoot/mr2-pseudo-dist/anucopy/mr2-pseudo-conf/conf.tar.gz
 mkdir -p  $HADOOPVERSION/etc/hadoop/
+echo Copy down yarn site to the conf folder
 tar -xf conf.tar.gz -C $HADOOPVERSION/etc/hadoop/
+tar -xf conf.tar.gz -C mini-llama/target/mini-llama-1.0.0-cdh5.5.0-SNAPSHOT/mini-llama-1.0.0-cdh5.5.0-SNAPSHOT/conf/
 export HADOOP_HOME=$(readlink -f $HADOOPVERSION)
 
 echo ### Starting perf test
@@ -50,7 +53,7 @@ pushd mini-llama/target/mini-llama-1.0.0-cdh5.5.0-SNAPSHOT/mini-llama-1.0.0-cdh5
 
 
 minillama minicluster -nodes $NODECOUNT > $WORKSPACE/logs/minillama.log&
-n=0; until [ $n -ge 500 ]; do  curl http://$llamahost:15001/ && break; echo Iteration $n; n=$(($n+1)); sleep 2; done
+n=0; until [ $n -ge 300 ]; do  curl http://$llamahost:15001/ && break; echo Iteration $n; n=$(($n+1)); sleep 2; done
 echo "## Llama ready .... starting perf test ###"
 
 sleep 10
